@@ -54,6 +54,12 @@
     transition: all .2s;
   }
   #setup-btn:hover { border-color: var(--accent); color: var(--accent2); }
+  .conn-dot {
+    width: 7px; height: 7px; border-radius: 50%; display: inline-block; margin-right: 6px;
+  }
+  .conn-dot.ok { background: var(--success); box-shadow: 0 0 6px var(--success); }
+  .conn-dot.no { background: var(--muted); }
+  #conn-label { font-size: 12px; color: var(--muted); }
 
   /* ── SETUP MODAL ── */
   .overlay {
@@ -188,6 +194,7 @@
 <header>
   <div class="logo">job<span>.</span>tracker</div>
   <div class="spacer"></div>
+  <span id="conn-label"></span>
   <button id="setup-btn" onclick="openSetup()">⚙ ตั้งค่า</button>
 </header>
 
@@ -299,6 +306,17 @@ let filterStatus = 'all';
 let searchQ = '';
 
 // ── CONFIG ──
+function updateConnStatus() {
+  const el = document.getElementById('conn-label');
+  if (config.token && config.gistId) {
+    el.innerHTML = `<span class="conn-dot ok"></span>เชื่อมต่อแล้ว`;
+  } else if (config.token) {
+    el.innerHTML = `<span class="conn-dot ok"></span>มี Token`;
+  } else {
+    el.innerHTML = `<span class="conn-dot no"></span>ยังไม่ได้ตั้งค่า`;
+  }
+}
+
 function openSetup() {
   document.getElementById('cfg-token').value = config.token || '';
   document.getElementById('cfg-gist').value = config.gistId || '';
@@ -312,6 +330,7 @@ async function saveConfig() {
   if (!token) { toast('กรุณากรอก Token'); return; }
   config = { token, gistId };
   localStorage.setItem(STORAGE_KEY, JSON.stringify(config));
+  updateConnStatus();
   closeSetup();
   await loadData();
 }
@@ -322,14 +341,14 @@ function loading(pct) {
 }
 
 async function loadData() {
-  if (!config.token) { renderNoToken(); return; }
+  if (!config.token) { updateConnStatus(); renderNoToken(); return; }
   loading(30);
   try {
     if (config.gistId) {
       const r = await fetch(`https://api.github.com/gists/${config.gistId}`, {
         headers: { Authorization: `token ${config.token}`, Accept: 'application/vnd.github+json' }
       });
-      if (!r.ok) throw new Error('ดึงข้อมูลไม่ได้');
+      if (!r.ok) throw new Error('ดึงข้อมูลไม่ได้ (Token หรือ Gist ID อาจไม่ถูกต้อง)');
       const data = await r.json();
       const raw = data.files['jobs.json']?.content;
       jobs = raw ? JSON.parse(raw) : [];
@@ -337,11 +356,13 @@ async function loadData() {
       jobs = [];
     }
     loading(100);
+    updateConnStatus();
     render();
     setTimeout(() => loading(0), 600);
   } catch(e) {
     toast('❌ ' + e.message);
     loading(0);
+    updateConnStatus();
   }
 }
 
@@ -371,6 +392,7 @@ async function saveData() {
     if (!config.gistId) {
       config.gistId = data.id;
       localStorage.setItem(STORAGE_KEY, JSON.stringify(config));
+      updateConnStatus();
       toast(`✅ สร้าง Gist ใหม่แล้ว ID: ${data.id}`);
     } else {
       toast('✅ บันทึกแล้ว');
@@ -559,6 +581,7 @@ document.getElementById('setup-overlay').addEventListener('click', e => { if (e.
 document.getElementById('entry-overlay').addEventListener('click', e => { if (e.target === e.currentTarget) closeEntry(); });
 
 // init
+updateConnStatus();
 loadData();
 </script>
 </body>
