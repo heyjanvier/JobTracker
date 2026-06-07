@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Job Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f0f11;
+    --surface: #18181c;
+    --surface2: #222228;
+    --border: #2e2e38;
+    --border2: #3a3a48;
+    --text: #e8e8f0;
+    --muted: #888898;
+    --accent: #7c6af7;
+    --accent2: #a89bfa;
+    --success: #4ade80;
+    --warning: #fbbf24;
+    --danger: #f87171;
+    --info: #60a5fa;
+    --interview: #34d399;
+    --radius: 8px;
+    --radius-lg: 14px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Sarabun', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    font-size: 15px;
+    line-height: 1.6;
+  }
+
+  /* ── TOP BAR ── */
+  header {
+    position: sticky; top: 0; z-index: 100;
+    background: rgba(15,15,17,0.85);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+    height: 56px;
+    display: flex; align-items: center; gap: 16px;
+  }
+  .logo { font-family: 'IBM Plex Mono', monospace; font-size: 15px; color: var(--accent2); letter-spacing: -0.5px; }
+  .logo span { color: var(--muted); }
+  header .spacer { flex: 1; }
+  #setup-btn {
+    background: none; border: 1px solid var(--border2); color: var(--muted);
+    padding: 6px 14px; border-radius: var(--radius); cursor: pointer; font-family: inherit; font-size: 13px;
+    transition: all .2s;
+  }
+  #setup-btn:hover { border-color: var(--accent); color: var(--accent2); }
+
+  /* ── SETUP MODAL ── */
+  .overlay {
+    display: none; position: fixed; inset: 0; background: rgba(0,0,0,.7);
+    backdrop-filter: blur(4px); z-index: 200; align-items: center; justify-content: center;
+  }
+  .overlay.open { display: flex; }
+  .modal {
+    background: var(--surface); border: 1px solid var(--border2);
+    border-radius: var(--radius-lg); padding: 28px; width: 480px; max-width: 95vw;
+  }
+  .modal h2 { font-size: 17px; font-weight: 500; margin-bottom: 6px; }
+  .modal p { font-size: 13px; color: var(--muted); margin-bottom: 20px; line-height: 1.7; }
+  .modal p a { color: var(--accent2); text-decoration: none; }
+  .modal p a:hover { text-decoration: underline; }
+  label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 5px; }
+  input[type=text], input[type=password], select, textarea {
+    width: 100%; background: var(--bg); border: 1px solid var(--border2); color: var(--text);
+    padding: 9px 12px; border-radius: var(--radius); font-family: inherit; font-size: 14px;
+    outline: none; transition: border-color .2s;
+  }
+  input:focus, select:focus, textarea:focus { border-color: var(--accent); }
+  textarea { resize: vertical; min-height: 80px; }
+  .modal .row { margin-bottom: 16px; }
+  .btn-row { display: flex; gap: 10px; justify-content: flex-end; margin-top: 8px; }
+  .btn { padding: 8px 20px; border-radius: var(--radius); font-family: inherit; font-size: 14px; cursor: pointer; border: none; transition: all .2s; }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-primary:hover { background: var(--accent2); }
+  .btn-ghost { background: none; border: 1px solid var(--border2); color: var(--muted); }
+  .btn-ghost:hover { border-color: var(--border2); color: var(--text); background: var(--surface2); }
+  .btn-danger { background: none; border: 1px solid #7f3535; color: var(--danger); }
+  .btn-danger:hover { background: #3a1515; }
+
+  /* ── MAIN LAYOUT ── */
+  .container { max-width: 1200px; margin: 0 auto; padding: 24px 20px; }
+
+  /* ── STATS ROW ── */
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px,1fr)); gap: 12px; margin-bottom: 24px; }
+  .stat-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius-lg); padding: 16px 18px;
+  }
+  .stat-card .num { font-size: 26px; font-weight: 500; font-family: 'IBM Plex Mono', monospace; }
+  .stat-card .lbl { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .stat-card.s-applied .num { color: var(--info); }
+  .stat-card.s-interview .num { color: var(--interview); }
+  .stat-card.s-rejected .num { color: var(--danger); }
+  .stat-card.s-offer .num { color: var(--success); }
+
+  /* ── TOOLBAR ── */
+  .toolbar { display: flex; gap: 10px; margin-bottom: 18px; flex-wrap: wrap; align-items: center; }
+  .toolbar input { flex: 1; min-width: 180px; }
+  .toolbar select { width: auto; }
+  .add-btn {
+    background: var(--accent); color: #fff; border: none; padding: 9px 18px;
+    border-radius: var(--radius); font-family: inherit; font-size: 14px; cursor: pointer;
+    white-space: nowrap; transition: background .2s; display: flex; align-items: center; gap: 6px;
+  }
+  .add-btn:hover { background: var(--accent2); }
+
+  /* ── TABLE ── */
+  .table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: var(--radius-lg); }
+  table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  th { background: var(--surface); color: var(--muted); font-weight: 500; font-size: 11.5px;
+    text-transform: uppercase; letter-spacing: .8px; padding: 12px 14px; text-align: left;
+    border-bottom: 1px solid var(--border); white-space: nowrap; }
+  td { padding: 11px 14px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--surface); }
+  td.company { font-weight: 500; color: var(--text); max-width: 180px; }
+  td.position { color: var(--muted); max-width: 160px; }
+  td.company, td.position { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  /* status badge */
+  .badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 500; white-space: nowrap;
+  }
+  .badge-applied { background: #1a2a40; color: var(--info); }
+  .badge-interviewing { background: #0e3028; color: var(--interview); }
+  .badge-offer { background: #0e2e1a; color: var(--success); }
+  .badge-rejected { background: #2e1414; color: var(--danger); }
+  .badge-pending { background: #2a2a1a; color: var(--warning); }
+
+  /* source badge */
+  .src { font-size: 11px; padding: 2px 8px; border-radius: 12px; background: var(--surface2); color: var(--muted); border: 1px solid var(--border); }
+
+  .action-btn {
+    background: none; border: none; cursor: pointer; padding: 4px 6px;
+    border-radius: 6px; transition: all .15s; font-size: 15px; line-height: 1;
+  }
+  .action-btn:hover { background: var(--surface2); }
+  .edit-btn { color: var(--accent2); }
+  .del-btn { color: var(--danger); }
+  .link-btn { color: var(--muted); text-decoration: none; }
+  .link-btn:hover { color: var(--info); }
+
+  .empty { text-align: center; padding: 60px 20px; color: var(--muted); }
+  .empty .big { font-size: 36px; margin-bottom: 12px; }
+  .empty p { font-size: 14px; }
+
+  /* ── ENTRY MODAL ── */
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .form-grid .full { grid-column: 1/-1; }
+  @media (max-width: 520px) { .form-grid { grid-template-columns: 1fr; } }
+
+  /* ── TOAST ── */
+  #toast {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(20px);
+    background: var(--surface2); border: 1px solid var(--border2); color: var(--text);
+    padding: 10px 20px; border-radius: var(--radius); font-size: 13.5px;
+    opacity: 0; transition: all .3s; z-index: 500; white-space: nowrap;
+  }
+  #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* loading */
+  .loading-bar { height: 2px; background: var(--accent); width: 0%; transition: width .4s; position: fixed; top: 0; left: 0; z-index: 999; }
+
+  .no-token { text-align: center; padding: 80px 20px; color: var(--muted); }
+  .no-token .title { font-size: 20px; font-weight: 500; color: var(--text); margin-bottom: 10px; }
+  .no-token p { font-size: 14px; max-width: 400px; margin: 0 auto 20px; }
+
+  @media (max-width: 600px) {
+    th.hide-sm, td.hide-sm { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="loading-bar" id="loading-bar"></div>
+
+<header>
+  <div class="logo">job<span>.</span>tracker</div>
+  <div class="spacer"></div>
+  <button id="setup-btn" onclick="openSetup()">⚙ ตั้งค่า</button>
+</header>
+
+<!-- SETUP MODAL -->
+<div class="overlay" id="setup-overlay">
+  <div class="modal">
+    <h2>ตั้งค่าการเชื่อมต่อ GitHub</h2>
+    <p>
+      ข้อมูลจะเก็บใน <strong>GitHub Gist</strong> (ฟรี)<br>
+      1. สร้าง Token: <a href="https://github.com/settings/tokens/new?scopes=gist&description=job-tracker" target="_blank">github.com/settings/tokens</a> → เลือก scope <strong>gist</strong><br>
+      2. วาง Token ด้านล่าง (เก็บใน localStorage เครื่องคุณเท่านั้น)
+    </p>
+    <div class="row">
+      <label>GitHub Personal Access Token</label>
+      <input type="password" id="cfg-token" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx">
+    </div>
+    <div class="row">
+      <label>Gist ID (ว่างไว้ = สร้างใหม่อัตโนมัติ)</label>
+      <input type="text" id="cfg-gist" placeholder="จะกรอกหลังสร้างครั้งแรก">
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-ghost" onclick="closeSetup()">ยกเลิก</button>
+      <button class="btn btn-primary" onclick="saveConfig()">บันทึกและโหลดข้อมูล</button>
+    </div>
+  </div>
+</div>
+
+<!-- ENTRY MODAL -->
+<div class="overlay" id="entry-overlay">
+  <div class="modal" style="width:600px">
+    <h2 id="modal-title">เพิ่มงานที่สมัคร</h2>
+    <div style="height:16px"></div>
+    <div class="form-grid">
+      <div>
+        <label>ชื่อบริษัท *</label>
+        <input type="text" id="f-company" placeholder="บริษัท ABC จำกัด">
+      </div>
+      <div>
+        <label>ตำแหน่งงาน *</label>
+        <input type="text" id="f-position" placeholder="Software Engineer">
+      </div>
+      <div>
+        <label>สถานะ</label>
+        <select id="f-status">
+          <option value="Applied">Applied</option>
+          <option value="Interviewing">Interviewing</option>
+          <option value="Offer">Offer</option>
+          <option value="Rejected">Rejected</option>
+          <option value="Pending">Pending</option>
+        </select>
+      </div>
+      <div>
+        <label>ช่องทาง</label>
+        <select id="f-source">
+          <option>Jobsdb</option>
+          <option>JobThai</option>
+          <option>Jobtopgun</option>
+          <option>LinkedIn</option>
+          <option>Facebook</option>
+          <option>Website</option>
+          <option>อื่นๆ</option>
+        </select>
+      </div>
+      <div>
+        <label>วันที่สมัคร</label>
+        <input type="text" id="f-date" placeholder="DD/MM/YYYY">
+      </div>
+      <div>
+        <label>เงินเดือน (บาท)</label>
+        <input type="text" id="f-salary" placeholder="30,000">
+      </div>
+      <div>
+        <label>สถานที่</label>
+        <input type="text" id="f-location" placeholder="กรุงเทพ / Remote">
+      </div>
+      <div>
+        <label>การเดินทาง</label>
+        <input type="text" id="f-transit" placeholder="BTS / MRT">
+      </div>
+      <div class="full">
+        <label>ลิงก์ประกาศงาน</label>
+        <input type="text" id="f-url" placeholder="https://...">
+      </div>
+      <div class="full">
+        <label>หมายเหตุ</label>
+        <textarea id="f-note" rows="2" placeholder="เพิ่มเติม..."></textarea>
+      </div>
+    </div>
+    <div class="btn-row" style="margin-top:18px">
+      <button class="btn btn-ghost" onclick="closeEntry()">ยกเลิก</button>
+      <button class="btn btn-primary" id="save-entry-btn" onclick="saveEntry()">บันทึก</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<div class="container">
+  <div id="main-content"></div>
+</div>
+
+<script>
+const STORAGE_KEY = 'jt_config';
+
+let config = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+let jobs = [];
+let editingId = null;
+let filterStatus = 'all';
+let searchQ = '';
+
+// ── CONFIG ──
+function openSetup() {
+  document.getElementById('cfg-token').value = config.token || '';
+  document.getElementById('cfg-gist').value = config.gistId || '';
+  document.getElementById('setup-overlay').classList.add('open');
+}
+function closeSetup() { document.getElementById('setup-overlay').classList.remove('open'); }
+
+async function saveConfig() {
+  const token = document.getElementById('cfg-token').value.trim();
+  const gistId = document.getElementById('cfg-gist').value.trim();
+  if (!token) { toast('กรุณากรอก Token'); return; }
+  config = { token, gistId };
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(config));
+  closeSetup();
+  await loadData();
+}
+
+// ── GIST API ──
+function loading(pct) {
+  document.getElementById('loading-bar').style.width = pct + '%';
+}
+
+async function loadData() {
+  if (!config.token) { renderNoToken(); return; }
+  loading(30);
+  try {
+    if (config.gistId) {
+      const r = await fetch(`https://api.github.com/gists/${config.gistId}`, {
+        headers: { Authorization: `token ${config.token}`, Accept: 'application/vnd.github+json' }
+      });
+      if (!r.ok) throw new Error('ดึงข้อมูลไม่ได้');
+      const data = await r.json();
+      const raw = data.files['jobs.json']?.content;
+      jobs = raw ? JSON.parse(raw) : [];
+    } else {
+      jobs = [];
+    }
+    loading(100);
+    render();
+    setTimeout(() => loading(0), 600);
+  } catch(e) {
+    toast('❌ ' + e.message);
+    loading(0);
+  }
+}
+
+async function saveData() {
+  loading(20);
+  const body = JSON.stringify({
+    description: 'Job Tracker Data',
+    public: false,
+    files: { 'jobs.json': { content: JSON.stringify(jobs, null, 2) } }
+  });
+  try {
+    let r, data;
+    if (config.gistId) {
+      r = await fetch(`https://api.github.com/gists/${config.gistId}`, {
+        method: 'PATCH',
+        headers: { Authorization: `token ${config.token}`, 'Content-Type': 'application/json' },
+        body
+      });
+    } else {
+      r = await fetch('https://api.github.com/gists', {
+        method: 'POST',
+        headers: { Authorization: `token ${config.token}`, 'Content-Type': 'application/json' },
+        body
+      });
+    }
+    data = await r.json();
+    if (!config.gistId) {
+      config.gistId = data.id;
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(config));
+      toast(`✅ สร้าง Gist ใหม่แล้ว ID: ${data.id}`);
+    } else {
+      toast('✅ บันทึกแล้ว');
+    }
+    loading(100);
+    setTimeout(() => loading(0), 600);
+  } catch(e) {
+    toast('❌ บันทึกไม่ได้: ' + e.message);
+    loading(0);
+  }
+}
+
+// ── ENTRY MODAL ──
+function openAdd() {
+  editingId = null;
+  document.getElementById('modal-title').textContent = 'เพิ่มงานที่สมัคร';
+  ['company','position','salary','location','transit','url','note'].forEach(f => document.getElementById('f-'+f).value = '');
+  document.getElementById('f-status').value = 'Applied';
+  document.getElementById('f-source').value = 'Jobsdb';
+  const today = new Date();
+  document.getElementById('f-date').value = `${String(today.getDate()).padStart(2,'0')}/${String(today.getMonth()+1).padStart(2,'0')}/${today.getFullYear()}`;
+  document.getElementById('entry-overlay').classList.add('open');
+}
+
+function openEdit(id) {
+  const job = jobs.find(j => j.id === id);
+  if (!job) return;
+  editingId = id;
+  document.getElementById('modal-title').textContent = 'แก้ไขงานที่สมัคร';
+  document.getElementById('f-company').value = job.company || '';
+  document.getElementById('f-position').value = job.position || '';
+  document.getElementById('f-status').value = job.status || 'Applied';
+  document.getElementById('f-source').value = job.source || 'Jobsdb';
+  document.getElementById('f-date').value = job.date || '';
+  document.getElementById('f-salary').value = job.salary || '';
+  document.getElementById('f-location').value = job.location || '';
+  document.getElementById('f-transit').value = job.transit || '';
+  document.getElementById('f-url').value = job.url || '';
+  document.getElementById('f-note').value = job.note || '';
+  document.getElementById('entry-overlay').classList.add('open');
+}
+
+function closeEntry() { document.getElementById('entry-overlay').classList.remove('open'); }
+
+async function saveEntry() {
+  const company = document.getElementById('f-company').value.trim();
+  const position = document.getElementById('f-position').value.trim();
+  if (!company || !position) { toast('กรุณากรอกชื่อบริษัทและตำแหน่ง'); return; }
+  const entry = {
+    id: editingId || Date.now().toString(36),
+    company, position,
+    status: document.getElementById('f-status').value,
+    source: document.getElementById('f-source').value,
+    date: document.getElementById('f-date').value,
+    salary: document.getElementById('f-salary').value.trim(),
+    location: document.getElementById('f-location').value.trim(),
+    transit: document.getElementById('f-transit').value.trim(),
+    url: document.getElementById('f-url').value.trim(),
+    note: document.getElementById('f-note').value.trim(),
+  };
+  if (editingId) {
+    const idx = jobs.findIndex(j => j.id === editingId);
+    jobs[idx] = entry;
+  } else {
+    jobs.push(entry);
+  }
+  closeEntry();
+  await saveData();
+  render();
+}
+
+async function deleteJob(id) {
+  if (!confirm('ลบรายการนี้?')) return;
+  jobs = jobs.filter(j => j.id !== id);
+  await saveData();
+  render();
+}
+
+// ── RENDER ──
+function statusBadge(s) {
+  const map = { Applied: 'applied', Interviewing: 'interviewing', Offer: 'offer', Rejected: 'rejected', Pending: 'pending' };
+  const cls = map[s] || 'pending';
+  return `<span class="badge badge-${cls}">${s}</span>`;
+}
+
+function render() {
+  let filtered = jobs;
+  if (filterStatus !== 'all') filtered = filtered.filter(j => j.status === filterStatus);
+  if (searchQ) {
+    const q = searchQ.toLowerCase();
+    filtered = filtered.filter(j =>
+      (j.company||'').toLowerCase().includes(q) ||
+      (j.position||'').toLowerCase().includes(q) ||
+      (j.location||'').toLowerCase().includes(q)
+    );
+  }
+  filtered = [...filtered].reverse();
+
+  const counts = { Applied: 0, Interviewing: 0, Offer: 0, Rejected: 0 };
+  jobs.forEach(j => { if (counts[j.status] !== undefined) counts[j.status]++; });
+
+  const html = `
+    <div class="stats">
+      <div class="stat-card s-applied"><div class="num">${jobs.length}</div><div class="lbl">สมัครทั้งหมด</div></div>
+      <div class="stat-card s-applied"><div class="num">${counts.Applied}</div><div class="lbl">Applied</div></div>
+      <div class="stat-card s-interview"><div class="num">${counts.Interviewing}</div><div class="lbl">Interviewing</div></div>
+      <div class="stat-card s-offer"><div class="num">${counts.Offer}</div><div class="lbl">Offer</div></div>
+      <div class="stat-card s-rejected"><div class="num">${counts.Rejected}</div><div class="lbl">Rejected</div></div>
+    </div>
+    <div class="toolbar">
+      <input type="text" placeholder="🔍 ค้นหาบริษัท / ตำแหน่ง..." id="search-input" value="${escHtml(searchQ)}" oninput="onSearch(this.value)">
+      <select id="filter-select" onchange="onFilter(this.value)">
+        <option value="all"${filterStatus==='all'?' selected':''}>ทุกสถานะ</option>
+        <option value="Applied"${filterStatus==='Applied'?' selected':''}>Applied</option>
+        <option value="Interviewing"${filterStatus==='Interviewing'?' selected':''}>Interviewing</option>
+        <option value="Offer"${filterStatus==='Offer'?' selected':''}>Offer</option>
+        <option value="Rejected"${filterStatus==='Rejected'?' selected':''}>Rejected</option>
+        <option value="Pending"${filterStatus==='Pending'?' selected':''}>Pending</option>
+      </select>
+      <button class="add-btn" onclick="openAdd()">+ เพิ่มงาน</button>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>บริษัท</th>
+            <th>ตำแหน่ง</th>
+            <th>สถานะ</th>
+            <th class="hide-sm">ช่องทาง</th>
+            <th class="hide-sm">สถานที่</th>
+            <th class="hide-sm">วันที่สมัคร</th>
+            <th>จัดการ</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${filtered.length === 0 ? `<tr><td colspan="8"><div class="empty"><div class="big">📋</div><p>ยังไม่มีรายการ หรือไม่พบผลการค้นหา</p></div></td></tr>` :
+            filtered.map((j, i) => `
+              <tr>
+                <td style="color:var(--muted);font-family:monospace;font-size:12px">${filtered.length - i}</td>
+                <td class="company">${escHtml(j.company)}</td>
+                <td class="position">${escHtml(j.position)}</td>
+                <td>${statusBadge(j.status)}</td>
+                <td class="hide-sm"><span class="src">${escHtml(j.source||'')}</span></td>
+                <td class="hide-sm" style="color:var(--muted);font-size:13px">${escHtml(j.location||'-')}</td>
+                <td class="hide-sm" style="color:var(--muted);font-size:13px;font-family:monospace">${escHtml(j.date||'-')}</td>
+                <td style="white-space:nowrap">
+                  ${j.url ? `<a class="action-btn link-btn" href="${escHtml(j.url)}" target="_blank" title="เปิดลิงก์">🔗</a>` : ''}
+                  <button class="action-btn edit-btn" onclick="openEdit('${j.id}')" title="แก้ไข">✏️</button>
+                  <button class="action-btn del-btn" onclick="deleteJob('${j.id}')" title="ลบ">🗑</button>
+                </td>
+              </tr>
+            `).join('')}
+        </tbody>
+      </table>
+    </div>
+    ${filtered.length > 0 ? `<p style="font-size:12px;color:var(--muted);margin-top:10px;text-align:right">แสดง ${filtered.length} จาก ${jobs.length} รายการ</p>` : ''}
+  `;
+  document.getElementById('main-content').innerHTML = html;
+}
+
+function renderNoToken() {
+  document.getElementById('main-content').innerHTML = `
+    <div class="no-token">
+      <div class="title">ยังไม่ได้ตั้งค่า</div>
+      <p>คลิก "ตั้งค่า" มุมขวาบน แล้วกรอก GitHub Token เพื่อเริ่มใช้งาน</p>
+      <button class="btn btn-primary" onclick="openSetup()">⚙ ตั้งค่าเลย</button>
+    </div>
+  `;
+}
+
+function onSearch(v) { searchQ = v; render(); }
+function onFilter(v) { filterStatus = v; render(); }
+function escHtml(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.classList.remove('show'), 3000);
+}
+
+// close modals on overlay click
+document.getElementById('setup-overlay').addEventListener('click', e => { if (e.target === e.currentTarget) closeSetup(); });
+document.getElementById('entry-overlay').addEventListener('click', e => { if (e.target === e.currentTarget) closeEntry(); });
+
+// init
+loadData();
+</script>
+</body>
+</html>
