@@ -234,9 +234,11 @@ function escHtml(str) {
 
 function showState(state) {
   ['loading', 'no-config', 'empty-jobs', 'job-table'].forEach(id => {
-    document.getElementById(id).classList.add('hidden');
+    const el = document.getElementById(id);
+    if (el) el.classList.add('hidden');
   });
-  document.getElementById(state).classList.remove('hidden');
+  const target = document.getElementById(state);
+  if (target) target.classList.remove('hidden');
 }
 
 /* ===================== MODAL ===================== */
