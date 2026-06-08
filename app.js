@@ -154,7 +154,7 @@ function renderTable(jobs) {
     return;
   }
 
-  showState('table');
+  showState('job-table');
   tbody.innerHTML = jobs.map((j, i) => `
     <tr>
       <td class="row-num">${i + 1}</td>
