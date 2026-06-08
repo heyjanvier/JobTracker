@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Job Tracker — เข้าสู่ระบบ</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0d0f14; --bg2: #13161e; --bg3: #1a1e28;
+      --border: #252a36; --border2: #2e3444;
+      --text: #e2e6f0; --text2: #8892a4; --text3: #555e72;
+      --accent: #6c8aff; --accent2: #4f6bdb;
+      --radius-sm: 6px;
+      --font: 'Sarabun', sans-serif;
+      --mono: 'IBM Plex Mono', monospace;
+    }
+    html { font-size: 15px; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font);
+      min-height: 100vh;
+      display: flex; align-items: center; justify-content: center;
+      padding: 20px;
+      background-image:
+        linear-gradient(rgba(108,138,255,.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(108,138,255,.03) 1px, transparent 1px);
+      background-size: 40px 40px;
+    }
+
+    .card {
+      background: var(--bg2);
+      border: 1px solid var(--border2);
+      border-radius: 16px;
+      padding: 40px 36px 36px;
+      width: 100%; max-width: 380px;
+      animation: slideUp .25s ease;
+      position: relative; overflow: hidden;
+    }
+    .card::before {
+      content: '';
+      position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+      width: 60%; height: 1px;
+      background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    }
+    @keyframes slideUp { from { transform: translateY(18px); opacity: 0; } }
+    @keyframes shake {
+      0%,100% { transform: translateX(0); }
+      20% { transform: translateX(-8px); }
+      40% { transform: translateX(8px); }
+      60% { transform: translateX(-5px); }
+      80% { transform: translateX(5px); }
+    }
+    .shake { animation: shake .35s ease; }
+
+    .brand { text-align: center; margin-bottom: 32px; }
+    .brand-icon {
+      font-size: 2.4rem; display: block; margin-bottom: 12px;
+      filter: drop-shadow(0 0 12px rgba(108,138,255,.4));
+    }
+    .brand h1 { font-size: 1.4rem; font-weight: 700; letter-spacing: -0.02em; }
+    .brand p { font-size: 0.78rem; color: var(--text3); margin-top: 4px; font-family: var(--mono); }
+
+    .form-group { margin-bottom: 18px; }
+    label {
+      display: block; font-size: 0.78rem; color: var(--text2);
+      margin-bottom: 5px; font-weight: 500;
+      letter-spacing: 0.03em; text-transform: uppercase;
+    }
+    input {
+      width: 100%; padding: 10px 14px;
+      background: var(--bg3); border: 1px solid var(--border2);
+      border-radius: var(--radius-sm);
+      color: var(--text); font-family: var(--mono); font-size: 0.9rem;
+      outline: none; transition: border-color .15s, box-shadow .15s;
+    }
+    input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(108,138,255,.12); }
+    input::placeholder { color: var(--text3); font-family: var(--font); }
+
+    .pwd-wrap { position: relative; }
+    .pwd-wrap input { padding-right: 44px; }
+    .pwd-toggle {
+      position: absolute; right: 11px; top: 50%; transform: translateY(-50%);
+      background: none; border: none; color: var(--text3);
+      cursor: pointer; font-size: 0.85rem; padding: 4px;
+      transition: color .15s; line-height: 1;
+    }
+    .pwd-toggle:hover { color: var(--text2); }
+
+    .btn-submit {
+      width: 100%; background: var(--accent); border: none; color: #fff;
+      border-radius: var(--radius-sm); padding: 11px;
+      font-family: var(--font); font-size: 0.95rem; font-weight: 600;
+      cursor: pointer; transition: background .15s, transform .1s;
+      margin-top: 6px; display: flex; align-items: center;
+      justify-content: center; gap: 8px; letter-spacing: 0.01em;
+    }
+    .btn-submit:hover:not(:disabled) { background: var(--accent2); transform: translateY(-1px); }
+    .btn-submit:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+
+    .spinner {
+      width: 16px; height: 16px;
+      border: 2px solid rgba(255,255,255,.3); border-top-color: #fff;
+      border-radius: 50%; animation: spin .6s linear infinite; display: none;
+    }
+    .btn-submit.loading .spinner { display: block; }
+    .btn-submit.loading .btn-text { display: none; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .msg {
+      display: none; padding: 10px 14px;
+      border-radius: var(--radius-sm); font-size: 0.84rem;
+      margin-top: 14px; animation: fadeIn .2s ease;
+    }
+    @keyframes fadeIn { from { opacity: 0; } }
+    .msg.error {
+      display: block;
+      background: rgba(239,68,68,.1); border: 1px solid rgba(239,68,68,.25); color: #fca5a5;
+    }
+
+    .footer { text-align: center; margin-top: 28px; font-size: 0.72rem; color: var(--text3); font-family: var(--mono); }
+
+    @media (max-width: 480px) { .card { padding: 28px 22px 24px; } }
+  </style>
+</head>
+<body>
+<div class="card" id="card">
+  <div class="brand">
+    <span class="brand-icon">📋</span>
+    <h1>Job Tracker</h1>
+    <p>private access only</p>
+  </div>
+
+  <div class="form-group">
+    <label>Username</label>
+    <input type="text" id="username" placeholder="username"
+           autocomplete="username" autocapitalize="none" spellcheck="false"
+           onkeydown="if(event.key==='Enter')document.getElementById('password').focus()" />
+  </div>
+  <div class="form-group">
+    <label>Password</label>
+    <div class="pwd-wrap">
+      <input type="password" id="password" placeholder="••••••••"
+             autocomplete="current-password"
+             onkeydown="if(event.key==='Enter')doLogin()" />
+      <button class="pwd-toggle" type="button" onclick="togglePwd(this)">👁</button>
+    </div>
+  </div>
+
+  <button class="btn-submit" id="btn" onclick="doLogin()">
+    <span class="btn-text">เข้าสู่ระบบ</span>
+    <div class="spinner"></div>
+  </button>
+  <div class="msg" id="msg"></div>
+
+  <div class="footer">jobstract.netlify.app</div>
+</div>
+
+<script>
+const SB_URL = localStorage.getItem('sb_url') || '';
+const SB_KEY = localStorage.getItem('sb_key') || '';
+
+/* ── ถ้า session ยังดีอยู่ → ข้ามไป app เลย ── */
+(async () => {
+  const token   = localStorage.getItem('sb_access_token');
+  const refresh = localStorage.getItem('sb_refresh_token');
+  if (!token || !SB_URL || !SB_KEY) return;
+  try {
+    const res = await fetch(`${SB_URL}/auth/v1/token?grant_type=refresh_token`, {
+      method: 'POST',
+      headers: { 'apikey': SB_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refresh_token: refresh })
+    });
+    if (!res.ok) throw new Error();
+    const d = await res.json();
+    localStorage.setItem('sb_access_token', d.access_token);
+    localStorage.setItem('sb_refresh_token', d.refresh_token);
+    window.location.replace('index.html');
+  } catch {
+    localStorage.removeItem('sb_access_token');
+    localStorage.removeItem('sb_refresh_token');
+  }
+})();
+
+function togglePwd(btn) {
+  const inp = document.getElementById('password');
+  inp.type = inp.type === 'password' ? 'text' : 'password';
+  btn.textContent = inp.type === 'password' ? '👁' : '🙈';
+}
+
+async function doLogin() {
+  const username = document.getElementById('username').value.trim();
+  const password = document.getElementById('password').value;
+  if (!username || !password) { showErr('กรุณากรอก Username และ Password'); return; }
+  if (!SB_URL || !SB_KEY)    { showErr('ยังไม่ได้ตั้งค่า Supabase — กรุณากรอก URL/Key ใน app ก่อน'); return; }
+
+  setBusy(true);
+  clearMsg();
+
+  /* username → fake email รูปแบบ username@app.local */
+  const email = `${username}@app.local`;
+
+  try {
+    const res = await fetch(`${SB_URL}/auth/v1/token?grant_type=password`, {
+      method: 'POST',
+      headers: { 'apikey': SB_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+    const data = await res.json();
+
+    if (res.ok && data.access_token) {
+      localStorage.setItem('sb_access_token', data.access_token);
+      localStorage.setItem('sb_refresh_token', data.refresh_token);
+      window.location.replace('index.html');
+    } else {
+      const raw = data.error_description || data.msg || data.message || '';
+      const map = {
+        'Invalid login credentials': 'Username หรือ Password ไม่ถูกต้อง',
+        'Email not confirmed':        'บัญชียังไม่ได้รับการยืนยัน',
+      };
+      showErr(map[raw] || raw || 'เข้าสู่ระบบไม่สำเร็จ');
+    }
+  } catch {
+    showErr('เชื่อมต่อ Supabase ไม่ได้ กรุณาลองใหม่');
+  } finally {
+    setBusy(false);
+  }
+}
+
+function setBusy(on) {
+  const btn = document.getElementById('btn');
+  btn.classList.toggle('loading', on);
+  btn.disabled = on;
+}
+function showErr(txt) {
+  const el = document.getElementById('msg');
+  el.textContent = txt; el.className = 'msg error';
+  const card = document.getElementById('card');
+  card.classList.remove('shake'); void card.offsetWidth; card.classList.add('shake');
+}
+function clearMsg() {
+  const el = document.getElementById('msg');
+  el.className = 'msg'; el.textContent = '';
+}
+</script>
+</body>
+</html>

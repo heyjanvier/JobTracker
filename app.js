@@ -23,9 +23,11 @@ document.addEventListener('DOMContentLoaded', () => {
 /* ===================== SUPABASE API ===================== */
 async function sbFetch(path, options = {}) {
   const url = `${SUPABASE_URL}/rest/v1/${path}`;
+  // ใช้ user JWT (จาก Supabase Auth) เพื่อให้ RLS ทำงานถูกต้อง
+  const authToken = window.__sbToken || localStorage.getItem('sb_access_token') || SUPABASE_KEY;
   const headers = {
     'apikey': SUPABASE_KEY,
-    'Authorization': `Bearer ${SUPABASE_KEY}`,
+    'Authorization': `Bearer ${authToken}`,
     'Content-Type': 'application/json',
     'Prefer': 'return=representation',
     ...options.headers
@@ -297,6 +299,23 @@ function saveConfig() {
   document.getElementById('config-modal').classList.add('hidden');
   showToast('✅ บันทึกการตั้งค่าเรียบร้อย');
   loadJobs();
+}
+
+/* ── LOGOUT ── */
+async function doLogout() {
+  try {
+    const token = window.__sbToken || localStorage.getItem('sb_access_token');
+    if (token && SUPABASE_URL && SUPABASE_KEY) {
+      await fetch(`${SUPABASE_URL}/auth/v1/logout`, {
+        method: 'POST',
+        headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${token}` }
+      });
+    }
+  } catch (_) {}
+  localStorage.removeItem('sb_access_token');
+  localStorage.removeItem('sb_refresh_token');
+  window.__sbToken = null;
+  window.location.replace('login.html');
 }
 
 // Close modals on overlay click
